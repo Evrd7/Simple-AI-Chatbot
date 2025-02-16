@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-openai.api_key = os.getenv("openai_api_key")
+openai.api_key = os.getenv("openai_api_key", "")
 
 client = openai.OpenAI()
 
