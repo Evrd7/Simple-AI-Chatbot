@@ -1,17 +1,241 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Smooth animations */
+        * {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Page Background */
+        body {
+            background: #f5f7fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Floating Chat Button */
+        .chat-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
+            font-size: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s;
+        }
+
+        .chat-button:hover {
+            transform: scale(1.1);
+        }
+
+        /* Chat Popup Container */
+        .chat-popup {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 370px;
+            max-width: 90%;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .chat-popup.open {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Chat Header */
+        .chat-header {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header img {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+        }
+
+        .close-chat {
+            cursor: pointer;
+            font-size: 20px;
+            color: white;
+        }
+
+        /* Chat Window */
+        #chat-window {
+            height: 350px;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #ffffff;
+        }
+
+        /* Scrollbar */
+        #chat-window::-webkit-scrollbar { width: 6px; }
+        #chat-window::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        /* Chat Messages */
+        .chat-msg {
+            display: flex;
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* User Message */
+        .chat-user {
+            align-self: flex-end;
+            background: #007bff;
+            color: white;
+            border-radius: 20px 20px 5px 20px;
+        }
+
+        /* AI Assistant Message */
+        .chat-assistant {
+            align-self: flex-start;
+            background: #f0f2f5;
+            color: black;
+            border-radius: 20px 20px 20px 5px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            align-self: flex-start;
+            display: flex;
+            gap: 4px;
+        }
+
+        .typing-indicator div {
+            width: 6px;
+            height: 6px;
+            background: #28a745;
+            border-radius: 50%;
+            animation: blink 1.2s infinite;
+        }
+
+        .typing-indicator div:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator div:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* Chat Input */
+        .chat-input-container {
+            display: flex;
+            padding: 12px;
+            background: #f9f9f9;
+            border-top: 1px solid #ddd;
+            align-items: center;
+        }
+
+        /* Input Field */
+        #user-input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-size: 14px;
+        }
+
+        #user-input:focus {
+            border-color: #007bff;
+            box-shadow: 0px 0px 5px rgba(0, 123, 255, 0.3);
+        }
+
+        /* Send Button */
+        .send-btn {
+            margin-left: 10px;
+            border-radius: 50%;
+            padding: 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-btn:hover { background: #0056b3; }
+
+    </style>
 </head>
 <body>
-    <h1>AI Chatbot Body</h1>
-    <div id="chat-window"></div>
-    <input type="text" id="user-input" placeholder="Type your message..." />
-    <button onclick="sendMessage()">Send</button>
 
-    <script> src="{{ url_for('static', filename='script.js') }}"</script>
+    <!-- Floating Chat Button -->
+    <button class="chat-button" onclick="toggleChat()">💬</button>
+
+    <!-- Chat Popup -->
+    <div class="chat-popup" id="chat-popup">
+        <div class="chat-header">
+            <img src="data:image/png;base64,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" alt="Bot"> AI Chatbot
+            <span class="close-chat" onclick="toggleChat()">✖</span>
+        </div>
+        <div id="chat-window"></div>
+        <div class="chat-input-container">
+            <input type="text" id="user-input" class="form-control" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const chatPopup = document.getElementById('chat-popup');
+            if (chatPopup.classList.contains('open')) {
+                chatPopup.style.opacity = "0";
+                setTimeout(() => chatPopup.classList.remove('open'), 200);
+            } else {
+                chatPopup.classList.add('open');
+                chatPopup.style.opacity = "1";
+            }
+        }
+    </script>
+    <script src="/static/script.js"></script>
+
 </body>
-
-
 </html>
